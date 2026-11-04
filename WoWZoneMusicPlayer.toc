@@ -1,0 +1,9 @@
+## Interface: 120105, 16001
+## Title: WoW Zone Music Player
+## Notes: Zone music from local Perfect World and Morrowind files
+## SavedVariables: PWZoneMusicSettings
+
+Tracks.lua
+MorrowindTracks.lua
+InstalledLibraries.lua
+WoWZoneMusicPlayer.lua
