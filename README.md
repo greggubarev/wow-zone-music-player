@@ -2,14 +2,16 @@
 
 This addon plays local Perfect World and Morrowind music in WoW Retail and WoW Forever. The two collections have separate zone selections, track orders, and shuffle histories. The starter package contains no soundtrack files.
 
-## Install
+## Install by copying the addon folder
 
 1. Put the 14 Perfect World MP3 files listed in `Tracks.lua` into `Audio/PerfectWorld/`.
-2. Put the 21 Morrowind MP3 files listed in `MorrowindTracks.lua` into `Audio/Morrowind/`. They must be named `mw_01.mp3` through `mw_21.mp3`. If you have the 21-track soundtrack archive, `./PrepareMorrowind.ps1 -ArchivePath 'C:\path\to\soundtrack.rar' -OutputDirectory './Audio/Morrowind' -FfmpegPath 'C:\path\to\ffmpeg.exe'` can prepare them. FFmpeg is required for FLAC tracks.
-3. Run `./Install.ps1`. It installs the addon and any complete collection into `_retail_` and `_forever_`. Alternatively, provide `-PerfectWorldRoot 'C:\path\to\PWI_en'` and/or `-MorrowindMusicRoot 'C:\path\to\morrowind-audio'` to copy music from elsewhere.
+2. Put the 21 Morrowind MP3 files listed in `MorrowindTracks.lua` into `Audio/Morrowind/`. They must be named `mw_01.mp3` through `mw_21.mp3`.
+3. Copy the entire `WoWZoneMusicPlayer` folder into either `World of Warcraft/_retail_/Interface/AddOns/` or `World of Warcraft/_forever_/Interface/AddOns/`. You can copy it into both. The `.toc` file must end up at `Interface/AddOns/WoWZoneMusicPlayer/WoWZoneMusicPlayer.toc`.
 4. Restart WoW. Make sure the game's Music volume is enabled.
 
-For other WoW locations, pass `-WowClientRoots @('C:\path\to\_retail_', 'C:\path\to\_forever_')` to `Install.ps1`. A collection tab shows `Files missing` until all its tracks are installed. The two audio folders are separate: Shuffle and automatic zone selection never mix their tracks.
+No script is needed for the copy method. The addon assumes both named collections are present; WoW does not reliably report a missing music file. If a tab is silent, check the filenames and folder layout. The two audio folders are separate: Shuffle and automatic zone selection never mix their tracks.
+
+Optional: `./PrepareMorrowind.ps1 -ArchivePath 'C:\path\to\soundtrack.rar' -OutputDirectory './Audio/Morrowind' -FfmpegPath 'C:\path\to\ffmpeg.exe'` prepares the 21-track archive (FFmpeg is required for FLAC tracks). `./Install.ps1` can copy the addon and available collections into both default WoW clients. Pass `-PerfectWorldRoot 'C:\path\to\PWI_en'` or `-MorrowindMusicRoot 'C:\path\to\morrowind-audio'` to use external audio folders. For other WoW locations, pass `-WowClientRoots @('C:\path\to\_retail_', 'C:\path\to\_forever_')`.
 
 If you previously installed `PerfectWorldZoneMusic`, remove that old addon folder before using this renamed version. Your saved player settings use the same SavedVariables name.
 
