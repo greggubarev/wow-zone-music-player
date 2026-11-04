@@ -4,8 +4,9 @@ This addon plays local Perfect World and Morrowind music in WoW Retail and WoW F
 
 ## Install by copying the addon folder
 
-1. Copy the entire `WoWZoneMusicPlayer` folder into either `World of Warcraft/_retail_/Interface/AddOns/` or `World of Warcraft/_forever_/Interface/AddOns/`. You can copy it into both. The `.toc` file must end up at `Interface/AddOns/WoWZoneMusicPlayer/WoWZoneMusicPlayer.toc`.
-4. Restart WoW. Make sure the game's Music volume is enabled.
+1. Download zip archive with [addon]((https://github.com/greggubarev/wow-zone-music-player/releases/tag/wow-addon )
+2. Copy the entire `WoWZoneMusicPlayer` folder into either `World of Warcraft/_retail_/Interface/AddOns/` or `World of Warcraft/_forever_/Interface/AddOns/`. You can copy it into both. The `.toc` file must end up at `Interface/AddOns/WoWZoneMusicPlayer/WoWZoneMusicPlayer.toc`.
+3. Restart WoW. Make sure the game's Music volume is enabled.
 
 No script is needed for the copy method. The two audio folders are separate: Shuffle and automatic zone selection never mix their tracks.
 
