@@ -46,7 +46,7 @@ PWZoneMusicZones = {
     [81] = "dungeon_d1", -- Silithus
     [83] = "common_d1",  -- Winterspring
     [85] = "city_a2",    -- Orgrimmar
-    [88] = "village_d",  -- Thunder Bluff
+    [88] = "city_d1",   -- Thunder Bluff
     [89] = "city_d1",    -- Darnassus
 
     -- Eastern Kingdoms
@@ -73,7 +73,7 @@ PWZoneMusicZones = {
     [56] = "dungeon_b1", -- Wetlands
     [84] = "city_a2",    -- Stormwind
     [87] = "city_f1",    -- Ironforge
-    [90] = "dungeon_a1", -- Undercity
+    [90] = "city_d1",   -- Undercity
     [210] = "common_c1", -- Cape of Stranglethorn
 }
 
@@ -82,9 +82,9 @@ PWZoneMusicDefaultTrack = "common_a1"
 
 -- A zone selects a theme; each theme rotates through compatible tracks.
 PWZoneMusicPools = {
-    city_a2 = { "city_a2", "city_f1", "village_b1", "common_b1" },
-    city_d1 = { "city_d1", "city_a2", "village_d", "common_c1" },
-    city_f1 = { "city_f1", "city_a2", "village_b1", "common_b1" },
+    city_a2 = { "city_a2", "city_f1", "city_d1" },
+    city_d1 = { "city_d1", "city_a2", "city_f1" },
+    city_f1 = { "city_f1", "city_a2", "city_d1" },
     common_a1 = { "common_a1", "common_c1", "common_f1", "village_b1" },
     common_b1 = { "common_b1", "village_b1", "common_c1", "city_f1" },
     common_c1 = { "common_c1", "common_a1", "village_d", "common_f1" },

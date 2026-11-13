@@ -30,6 +30,14 @@ local libraries = {
         defaultTrack = PWZoneMusicDefaultTrack, audioFolder = "PerfectWorld", pools = PWZoneMusicPools },
     morrowind = PWZoneMusicMorrowind,
 }
+local capitalZoneIDs = {
+    ["Stormwind City"] = 84, ["Stormwind"] = 84, ["Штормград"] = 84,
+    ["Orgrimmar"] = 85, ["Оргриммар"] = 85,
+    ["Ironforge"] = 87, ["Стальгорн"] = 87,
+    ["Thunder Bluff"] = 88, ["Громовой Утес"] = 88,
+    ["Darnassus"] = 89, ["Дарнас"] = 89,
+    ["Undercity"] = 90, ["Подгород"] = 90,
+}
 
 local function Library()
     return libraries[PWZoneMusicSettings.library or "pwi"]
@@ -49,16 +57,29 @@ local function MapID()
     end
 end
 
+local function CapitalMapID()
+    local zone = GetRealZoneText and GetRealZoneText()
+    local id = zone and capitalZoneIDs[zone]
+    if id then return id end
+    zone = GetZoneText and GetZoneText()
+    return zone and capitalZoneIDs[zone]
+end
+
 local function TrackForMap(mapID)
     local library = Library()
+    local capitalID = CapitalMapID()
+    if capitalID and library.zones[capitalID] then
+        return library.zones[capitalID]
+    end
     local id = mapID
-    while id do
+    local seen = {}
+    while id and id ~= 0 and not seen[id] do
+        seen[id] = true
         local key = library.zones[id]
         if key then return key end
         if not C_Map or not C_Map.GetMapInfo then break end
         local info = C_Map.GetMapInfo(id)
         id = info and info.parentMapID
-        if id == 0 then break end
     end
     return library.defaultTrack
 end
@@ -751,7 +772,10 @@ SlashCmdList.PWZONEMUSIC = function(input)
     elseif command == "hide" then
         if panel then panel:Hide() end
     elseif command == "map" then
-        Say("Map ID: " .. tostring(MapID()))
+        Say("Map ID: " .. tostring(MapID()) .. "; zone: " ..
+            tostring(GetRealZoneText and GetRealZoneText() or "unknown") ..
+            "; theme: " .. tostring(TrackForMap(MapID())) ..
+            "; mode: " .. (manualTrack and "Manual" or "Auto"))
     elseif command == "pwi" or command == "morrowind" then
         SetLibrary(command)
     else
