@@ -29,7 +29,30 @@ local libraries = {
     pwi = { tracks = PWZoneMusicTracks, order = PWZoneMusicOrder, zones = PWZoneMusicZones,
         defaultTrack = PWZoneMusicDefaultTrack, audioFolder = "PerfectWorld", pools = PWZoneMusicPools },
     morrowind = PWZoneMusicMorrowind,
+    lineage2 = PWZoneMusicLineage2,
 }
+local mix = { tracks = {}, order = {}, zones = {}, defaultTrack = "all",
+    audioFolder = "", pools = { all = {} } }
+for _, id in ipairs({ "pwi", "morrowind", "lineage2" }) do
+    if PWZoneMusicInstalled[id] then
+        local source = libraries[id]
+        for _, key in ipairs(source.order) do
+            local track = source.tracks[key]
+            local mixKey = id .. ":" .. key
+            mix.tracks[mixKey] = {
+                file = track.file, duration = track.duration,
+                title = ({ pwi = "PW", morrowind = "TES III", lineage2 = "L2" })[id]
+                    .. ": " .. (track.title or key:gsub("_", " ")),
+                audioFolder = source.audioFolder,
+            }
+            mix.order[#mix.order + 1] = mixKey
+            if tonumber(track.duration) and track.duration >= 90 then
+                mix.pools.all[#mix.pools.all + 1] = mixKey
+            end
+        end
+    end
+end
+libraries.mix = mix
 local capitalZoneIDs = {
     ["Stormwind City"] = 84, ["Stormwind"] = 84, ["Штормград"] = 84,
     ["Orgrimmar"] = 85, ["Оргриммар"] = 85,
@@ -40,10 +63,11 @@ local capitalZoneIDs = {
 }
 
 local function Library()
-    return libraries[PWZoneMusicSettings.library or "pwi"]
+    return libraries[PWZoneMusicSettings.library] or libraries.pwi
 end
 
 local function LibraryReady()
+    if PWZoneMusicSettings.library == "mix" then return #mix.order > 0 end
     return PWZoneMusicInstalled[PWZoneMusicSettings.library or "pwi"] == true
 end
 
@@ -152,7 +176,8 @@ local function UpdateUI()
     trackText:SetText(ShortTitle(title, 27))
     local state = not LibraryReady() and "Files missing" or not settings.enabled and "Off" or
         paused and "Paused" or intervalRemaining > 0 and "Interval" or "Playing"
-    statusText:SetText(state .. " / " .. (manualTrack and "Manual" or "Auto zone"))
+    statusText:SetText(state .. " / " .. (manualTrack and "Manual" or
+        (settings.library == "mix" and "Auto mix" or "Auto zone")))
     miniToggleButton.label:SetText(settings.miniBar and "Mini bar ON" or "Mini bar OFF")
     libraryNote:SetText(LibraryReady() and "SELECT A TRACK" or "INSTALL MUSIC FILES TO PLAY")
     for id, tab in pairs(libraryTabs) do
@@ -219,7 +244,7 @@ local function Play(key)
         Stop()
         return
     end
-    local folder = Library().audioFolder
+    local folder = track.audioFolder or Library().audioFolder
     local path = "Interface\\AddOns\\" .. addonName .. "\\Audio\\"
         .. (folder ~= "" and folder .. "\\" or "") .. track.file
     Stop()
@@ -333,6 +358,7 @@ local function SetLibrary(id)
     if not libraries[id] or PWZoneMusicSettings.library == id then return end
     Stop()
     PWZoneMusicSettings.library = id
+    if id == "mix" then PWZoneMusicSettings.shuffle = true end
     manualTrack = nil
     activePoolKey = nil
     autoRecent = {}
@@ -414,19 +440,21 @@ end
 
 local function MakeLibraryTab(parent, id, caption, iconIndex, x)
     local button = CreateFrame("Button", "PWZMLibrary" .. id, parent)
-    button:SetSize(208, 34)
+    button:SetSize(101, 34)
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -44)
     local background = button:CreateTexture(nil, "BACKGROUND")
     background:SetAllPoints()
     button.background = background
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(22, 22)
-    icon:SetPoint("LEFT", button, "LEFT", 13, 0)
+    icon:SetPoint("LEFT", button, "LEFT", 5, 0)
     icon:SetTexture("Interface\\AddOns\\" .. addonName .. "\\SourceIcons.tga")
-    icon:SetTexCoord(iconIndex / 2, (iconIndex + 1) / 2, 0, 1)
+    icon:SetTexCoord(iconIndex / 4, (iconIndex + 1) / 4, 0, 1)
     button.icon = icon
-    local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetPoint("LEFT", button, "LEFT", 45, 0)
+    local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    label:SetPoint("LEFT", button, "LEFT", 29, 0)
+    label:SetWidth(69)
+    label:SetJustifyH("LEFT")
     label:SetText(caption)
     button.label = label
     button:SetScript("OnClick", function() SetLibrary(id) end)
@@ -600,8 +628,10 @@ local function CreateUI()
         SetMiniBar(not PWZoneMusicSettings.miniBar)
     end)
     libraryTabs = {
-        pwi = MakeLibraryTab(panel, "pwi", "PERFECT WORLD", 0, 13),
-        morrowind = MakeLibraryTab(panel, "morrowind", "MORROWIND", 1, 229),
+        pwi = MakeLibraryTab(panel, "pwi", "PWI", 0, 13),
+        morrowind = MakeLibraryTab(panel, "morrowind", "TES III", 1, 119),
+        lineage2 = MakeLibraryTab(panel, "lineage2", "LINEAGE II", 2, 225),
+        mix = MakeLibraryTab(panel, "mix", "ALL MIX", 3, 331),
     }
     local card = panel:CreateTexture(nil, "BACKGROUND")
     card:SetPoint("TOPLEFT", panel, "TOPLEFT", 13, -88)
@@ -622,7 +652,7 @@ local function CreateUI()
         play = MakePanelIcon(panel, "Play", 2, 137, "Play / pause", TogglePlayback),
         next = MakePanelIcon(panel, "Next", 4, 199, "Next track", function() SelectRelative(1) end),
         repeatOne = MakePanelIcon(panel, "Repeat", 5, 261, "Repeat current track", ToggleRepeat),
-        shuffle = MakePanelIcon(panel, "Shuffle", 6, 323, "Shuffle within current library", ToggleShuffle),
+        shuffle = MakePanelIcon(panel, "Shuffle", 6, 323, "Shuffle tracks in selected tab", ToggleShuffle),
         auto = MakePanelIcon(panel, "Auto", 7, 385, "Auto zone selection", SelectAuto),
     }
     libraryNote = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -704,7 +734,7 @@ events:RegisterEvent("ZONE_CHANGED_INDOORS")
 events:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_ENTERING_WORLD" then
         if PWZoneMusicSettings == nil then PWZoneMusicSettings = { enabled = false } end
-        if PWZoneMusicSettings.library ~= "morrowind" then PWZoneMusicSettings.library = "pwi" end
+        if not libraries[PWZoneMusicSettings.library] then PWZoneMusicSettings.library = "pwi" end
         if PWZoneMusicSettings.ambientVersion ~= 1 then
             PWZoneMusicSettings.repeatOne = false
             PWZoneMusicSettings.ambientVersion = 1
@@ -776,9 +806,9 @@ SlashCmdList.PWZONEMUSIC = function(input)
             tostring(GetRealZoneText and GetRealZoneText() or "unknown") ..
             "; theme: " .. tostring(TrackForMap(MapID())) ..
             "; mode: " .. (manualTrack and "Manual" or "Auto"))
-    elseif command == "pwi" or command == "morrowind" then
+    elseif command == "pwi" or command == "morrowind" or command == "lineage2" or command == "mix" then
         SetLibrary(command)
     else
-        Say("/pwm on, off, pause, prev, next, auto, repeat, shuffle, mini, pwi, morrowind, show, hide, map")
+        Say("/pwm on, off, pause, prev, next, auto, repeat, shuffle, mini, pwi, morrowind, lineage2, mix, show, hide, map")
     end
 end

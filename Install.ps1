@@ -1,6 +1,7 @@
 param(
     [string]$PerfectWorldRoot,
     [string]$MorrowindMusicRoot,
+    [string]$Lineage2MusicRoot,
     [string[]]$WowClientRoots = @(
         'C:\Program Files (x86)\World of Warcraft\_retail_',
         'C:\Program Files (x86)\World of Warcraft\_forever_'
@@ -49,6 +50,26 @@ if ($MorrowindMusicRoot -and $missingMorrowind.Count -gt 0) {
 }
 $morrowindSourceReady = $missingMorrowind.Count -eq 0
 
+$lineage2Text = Get-Content -LiteralPath (Join-Path $addonSource 'Lineage2Tracks.lua') -Raw
+$lineage2Names = [regex]::Matches($lineage2Text, 'file\s*=\s*"(l2_\d{2}\.mp3)"') |
+    ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
+if ($lineage2Names.Count -ne 53) { throw 'Expected 53 Lineage II tracks.' }
+$lineage2Source = if ($Lineage2MusicRoot) {
+    $Lineage2MusicRoot
+} else {
+    Join-Path $addonSource 'Audio\Lineage2'
+}
+if ($Lineage2MusicRoot -and -not (Test-Path -LiteralPath $lineage2Source -PathType Container)) {
+    throw "Lineage II music folder not found: $lineage2Source"
+}
+$missingLineage2 = @($lineage2Names | Where-Object {
+    -not (Test-Path -LiteralPath (Join-Path $lineage2Source $_) -PathType Leaf)
+})
+if ($Lineage2MusicRoot -and $missingLineage2.Count -gt 0) {
+    throw "Missing Lineage II music files: $($missingLineage2 -join ', ')"
+}
+$lineage2SourceReady = $missingLineage2.Count -eq 0
+
 foreach ($root in $WowClientRoots) {
     $addons = Join-Path $root 'Interface\AddOns'
     if (-not (Test-Path -LiteralPath $addons -PathType Container)) {
@@ -89,17 +110,35 @@ foreach ($root in $WowClientRoots) {
             }
         }
     }
+    $lineage2Target = Join-Path $audioTarget 'Lineage2'
+    New-Item -ItemType Directory -Path $lineage2Target -Force | Out-Null
+    if ($lineage2SourceReady) {
+        foreach ($name in $lineage2Names) {
+            $sourceFile = Join-Path $lineage2Source $name
+            $targetFile = Join-Path $lineage2Target $name
+            $same = (Test-Path -LiteralPath $targetFile -PathType Leaf) -and
+                ((Get-FileHash -LiteralPath $sourceFile -Algorithm SHA256).Hash -eq
+                 (Get-FileHash -LiteralPath $targetFile -Algorithm SHA256).Hash)
+            if (-not $same) {
+                Copy-Item -LiteralPath $sourceFile -Destination $targetFile -Force
+            }
+        }
+    }
     $pwiReady = (@($trackNames | Where-Object {
         -not (Test-Path -LiteralPath (Join-Path $pwiTarget $_) -PathType Leaf)
     }).Count -eq 0)
     $morrowindReady = (@($morrowindNames | Where-Object {
         -not (Test-Path -LiteralPath (Join-Path $morrowindTarget $_) -PathType Leaf)
     }).Count -eq 0)
-    foreach ($name in @('WoWZoneMusicPlayer.toc', 'WoWZoneMusicPlayer.lua', 'Tracks.lua', 'MorrowindTracks.lua', 'MusicIcon.tga', 'ControlIcons.tga', 'SourceIcons.tga', 'PrepareMorrowind.ps1', 'README.md')) {
+    $lineage2Ready = (@($lineage2Names | Where-Object {
+        -not (Test-Path -LiteralPath (Join-Path $lineage2Target $_) -PathType Leaf)
+    }).Count -eq 0)
+    foreach ($name in @('WoWZoneMusicPlayer.toc', 'WoWZoneMusicPlayer.lua', 'Tracks.lua', 'MorrowindTracks.lua', 'Lineage2Tracks.lua', 'MusicIcon.tga', 'ControlIcons.tga', 'SourceIcons.tga', 'PrepareMorrowind.ps1', 'PrepareLineage2.ps1', 'README.md')) {
         Copy-Item -LiteralPath (Join-Path $addonSource $name) -Destination (Join-Path $target $name) -Force
     }
     $morrowindFlag = if ($morrowindReady) { 'true' } else { 'false' }
     $pwiFlag = if ($pwiReady) { 'true' } else { 'false' }
-    Set-Content -LiteralPath (Join-Path $target 'InstalledLibraries.lua') -Value "PWZoneMusicInstalled = { pwi = $pwiFlag, morrowind = $morrowindFlag }" -Encoding Ascii
-    Write-Output "Installed: $target (Perfect World $(if ($pwiReady) { $trackNames.Count } else { 0 }), Morrowind $(if ($morrowindReady) { 21 } else { 0 }))"
+    $lineage2Flag = if ($lineage2Ready) { 'true' } else { 'false' }
+    Set-Content -LiteralPath (Join-Path $target 'InstalledLibraries.lua') -Value "PWZoneMusicInstalled = { pwi = $pwiFlag, morrowind = $morrowindFlag, lineage2 = $lineage2Flag }" -Encoding Ascii
+    Write-Output "Installed: $target (Perfect World $(if ($pwiReady) { $trackNames.Count } else { 0 }), Morrowind $(if ($morrowindReady) { 21 } else { 0 }), Lineage II $(if ($lineage2Ready) { $lineage2Names.Count } else { 0 }))"
 }

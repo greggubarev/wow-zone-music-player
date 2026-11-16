@@ -1,10 +1,11 @@
 ## Interface: 120105, 16001
 ## Title: WoW Zone Music Player
-## Notes: Zone music from local Perfect World and Morrowind files
-## Version: 1.1.0
+## Notes: Zone music from local Perfect World, Morrowind and Lineage II files
+## Version: 1.2.0
 ## SavedVariables: PWZoneMusicSettings
 
 Tracks.lua
 MorrowindTracks.lua
+Lineage2Tracks.lua
 InstalledLibraries.lua
 WoWZoneMusicPlayer.lua
